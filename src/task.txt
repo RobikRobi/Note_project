@@ -11,3 +11,10 @@ SQLAlchemy — модели для заметок и тегов.
 Alembic — миграции БД.
 PostgreSQL (или SQLite для простоты).
 Docker — контейнеризация приложения + БД.
+
+
+# Для текущей сессии
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+
+# Или на постоянной основе (требует админских прав)
+Set-ExecutionPolicy RemoteSigned
