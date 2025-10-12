@@ -2,12 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
+import uuid
 
 from src.models.UserModel import User
-from src.auth.auth_shema import RegisterUser, UserShema, LoginUser, UpdateUser
-from src.db import get_session
-from src.auth.auth_utilits import create_access_token, dencode_password, check_password
+from src.models.SessionModel import SessionUser
+from src.auth.auyh_shema import RegisterUser
+from src.auth.auth_utilits import decode_password, check_password
 from src.get_current_user import get_current_user
+from src.db import get_session
+
 
 app = APIRouter(prefix="/users", tags=["Users"])
 
@@ -15,9 +18,9 @@ app = APIRouter(prefix="/users", tags=["Users"])
 
 # регистрация
 @app.post("/register")
-async def register_user(data:RegisterUser ,session:AsyncSession = Depends(get_session)):
+async def register_user(data:RegisterUser, session:AsyncSession = Depends(get_session)):
     
-    isUserEx = await session.scalar(select(User).where(User.email == data.email))
+    isUserEx = await session.scalar(select(User).where(User.login == data.login))
     
     if isUserEx:
         raise HTTPException(status_code=411, detail={
@@ -27,13 +30,20 @@ async def register_user(data:RegisterUser ,session:AsyncSession = Depends(get_se
         
     data_dict = data.model_dump()
         
-    data_dict["password"] = await dencode_password(password=data.password)
+    data_dict["password"] = await decode_password(password=data.password)
     
     user = User(**data_dict)
     session.add(user) 
     await session.flush()
 
+    session_key = uuid.uuid4()
     user_id = user.id
+    session_user = SessionUser(user_id = user.id, key = session_key)
+    session.add(session_user)
+    session.commit()
+    return {"key":session_key}
+
+
         
     await session.commit()
         

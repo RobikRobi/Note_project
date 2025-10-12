@@ -5,7 +5,7 @@ from src.db import Base
 from src.models.NoteModel import Note
 
 class User(Base):
-    __tablename__ = "user_table"
+    __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
