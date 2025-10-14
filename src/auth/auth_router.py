@@ -6,10 +6,10 @@ import uuid
 
 from src.models.UserModel import User
 from src.models.SessionModel import SessionUser
-from src.auth.auyh_shema import RegisterUser
+from src.auth.auth_shema import RegisterUser
 from src.auth.auth_utilits import decode_password, check_password
-from src.get_current_user import get_current_user
 from src.db import get_session
+from src.auth_user import authChecker
 
 
 app = APIRouter(prefix="/users", tags=["Users"])
@@ -17,7 +17,7 @@ app = APIRouter(prefix="/users", tags=["Users"])
 
 
 # регистрация
-@app.post("/register")
+@app.post("/reg")
 async def register_user(data:RegisterUser, session:AsyncSession = Depends(get_session)):
     
     isUserEx = await session.scalar(select(User).where(User.login == data.login))
@@ -43,16 +43,10 @@ async def register_user(data:RegisterUser, session:AsyncSession = Depends(get_se
     session.commit()
     return {"key":session_key}
 
-
-        
-    await session.commit()
-        
-    user_token = await create_access_token(user_id=user_id)
-    data_dict["token"] = user_token  
-        
-    return data_dict
-
-
+# получение авторизованного пользователя
+@app.get("/me")
+async def me(me: User = Depends(authChecker)):
+     return me.name
 
 # авторизация
 # @app.post("/login")
@@ -69,7 +63,4 @@ async def register_user(data:RegisterUser, session:AsyncSession = Depends(get_se
 #                 "status":401
 #         })
 
-# получение авторизованного пользователя
-@app.get("/me", response_model=UserShema)
-async def me(me = Depends(get_current_user)):
-     return me
+

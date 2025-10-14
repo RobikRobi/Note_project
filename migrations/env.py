@@ -6,6 +6,7 @@ from sqlalchemy import pool
 from alembic import context
 from src.db import Base
 from src.models.UserModel import User
+from src.models.SessionModel import SessionUser
 from src.models.NoteModel import Note, Tags, NoteTags
 
 # this is the Alembic Config object, which provides

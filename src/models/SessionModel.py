@@ -8,5 +8,5 @@ class SessionUser(Base):
     __tablename__ = "ses_user"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("user_id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
     key: Mapped[uuid.UUID] = mapped_column(unique=True)
