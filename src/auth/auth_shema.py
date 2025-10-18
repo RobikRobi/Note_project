@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr, field_validator
 class RegisterUser(BaseModel):
         
     login: str
-    password: str | bytes
+    password: str
     name: str
     
     @field_validator("password")
@@ -19,3 +19,16 @@ class LoginUser(BaseModel):
     
     login: str
     password: str   
+
+
+class UpdateUser(BaseModel):
+
+    login: str
+    name: str
+
+
+class UserShema(BaseModel):
+
+    id: int
+    name: str
+    login: str
