@@ -21,31 +21,29 @@ async def create_note(
     current_user: User = Depends(authChecker),
     session: AsyncSession = Depends(get_session)
 ):
-    # Создание новой заметки
+    # Создание заметки с заголовком
     new_note = Note(
         user_id=current_user.id,
+        title=data.note_title,
         content=data.content
     )
 
     session.add(new_note)
-    await session.flush()  # получаем ID созданной заметки до коммита
+    await session.flush()  # получаем ID до коммита
 
-    # Обработка тегов, если они указаны
-    if data.title:
-        for tag_name in data.title:
-            # Проверяем, существует ли тег с таким именем
-            stmt = select(Tags).where(Tags.name == tag_name)
-            tag = await session.scalar(stmt)
-            
-            # Если тег не найден — создаём новый
-            if not tag:
-                tag = Tags(name=tag_name)
-                session.add(tag)
-                await session.flush()
+    # Обработка тегов
+    for tag_name in data.tags:
+        stmt = select(Tags).where(Tags.name == tag_name)
+        tag = await session.scalar(stmt)
 
-            # Добавляем связь между заметкой и тегом
-            note_tag = NoteTags(note_id=new_note.id, tagse_id=tag.id)
-            session.add(note_tag)
+        if not tag:
+            tag = Tags(name=tag_name)
+            session.add(tag)
+            await session.flush()
+
+        # Связь заметки и тега
+        note_tag = NoteTags(note_id=new_note.id, tagse_id=tag.id)
+        session.add(note_tag)
 
     await session.commit()
     await session.refresh(new_note)
@@ -54,8 +52,9 @@ async def create_note(
         "message": "Note created successfully",
         "note_id": new_note.id,
         "user_id": current_user.id,
+        "title": new_note.title,
         "content": new_note.content,
-        "tags": data.title
+        "tags": data.tags
     }
 
 # Обновление заметки
@@ -168,3 +167,29 @@ async def get_note_by_id(
         "updated_at": note.updated_at,
         "tags": [tag.name for tag in note.tags]
     }
+
+
+# Получение всех заметок пользователя
+@app.get("/notes")
+async def get_user_notes(
+    current_user: User = Depends(authChecker),
+    session: AsyncSession = Depends(get_session)
+):
+    # Выбираем все заметки пользователя и сразу подгружаем теги
+    stmt = select(Note).where(Note.user_id == current_user.id).options(selectinload(Note.tags))
+    result = await session.scalars(stmt)
+    notes = result.all()
+
+    # Формируем вывод
+    notes_list = []
+    for note in notes:
+        notes_list.append({
+            "id": note.id,
+            "title": note.title,
+            "content": note.content,
+            "tags": [tag.name for tag in note.tags],
+            "created_at": note.created_at,
+            "updated_at": note.updated_at
+        })
+
+    return {"notes": notes_list}
