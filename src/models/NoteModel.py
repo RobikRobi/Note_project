@@ -16,9 +16,11 @@ class Note(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+
     username: Mapped["User"] = relationship(back_populates="notes", uselist=False)
-    title: Mapped[list["Tags"]] = relationship(secondary="notetags", back_populates="notes", uselist=True)
+    title: Mapped[str] = mapped_column(nullable=False)
     content: Mapped[str] = mapped_column(nullable=True)
+    tags: Mapped[list["Tags"]] = relationship(secondary="notetags", back_populates="notes", uselist=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), default=func.now())
     updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), default=func.now())
 
@@ -26,7 +28,8 @@ class Tags(Base):
     __tablename__ = "tags"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    notes: Mapped[list["Note"]] = relationship(secondary="notetags", back_populates="title", uselist=True)
+    name: Mapped[str] = mapped_column(unique=True)
+    notes: Mapped[list["Note"]] = relationship(secondary="notetags", back_populates="tags", uselist=True)
 
 class NoteTags(Base):
     __tablename__ = "notetags"

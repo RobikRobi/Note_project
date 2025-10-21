@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException, Path, status
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
-from sqlalchemy.orm import selectinload
 import uuid
 
 from src.models.UserModel import User
