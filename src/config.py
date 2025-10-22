@@ -18,13 +18,17 @@ class EnvData(BaseSettings):
 
     DB_URl: str
     DB_URl_ASYNC: str
-    model_config = SettingsConfigDict(env_file='.env')
+    REDIS_HOST: str
+    REDIS_PORT: int
+
+    model_config = SettingsConfigDict(env_file='.env', extra='ignore') 
 
 
 class Config(BaseModel):
 
     env_data:EnvData = EnvData()
     auth_data:AuthData = AuthData()
+  
 
     
 config = Config()

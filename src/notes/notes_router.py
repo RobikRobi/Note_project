@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime, timedelta, timezone
 from src.db import get_session
+from src.redis_client import redis_client
 from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
+import json
 
 from src.models.NoteModel import Note, Tags, NoteTags
 from src.models.UserModel import User
@@ -175,12 +176,18 @@ async def get_user_notes(
     current_user: User = Depends(authChecker),
     session: AsyncSession = Depends(get_session)
 ):
-    # Выбираем все заметки пользователя и сразу подгружаем теги
+    redis_key = f"user:{current_user.id}:notes"
+
+    # Попытка получить данные из кэша
+    cached_notes = await redis_client.get(redis_key)
+    if cached_notes:
+        return {"notes": json.loads(cached_notes)}
+
+    # Если кэша нет — берем из базы
     stmt = select(Note).where(Note.user_id == current_user.id).options(selectinload(Note.tags))
     result = await session.scalars(stmt)
     notes = result.all()
 
-    # Формируем вывод
     notes_list = []
     for note in notes:
         notes_list.append({
@@ -188,8 +195,11 @@ async def get_user_notes(
             "title": note.title,
             "content": note.content,
             "tags": [tag.name for tag in note.tags],
-            "created_at": note.created_at,
-            "updated_at": note.updated_at
+            "created_at": note.created_at.isoformat(),
+            "updated_at": note.updated_at.isoformat()
         })
+
+    # Сохраняем в Redis с TTL 300 секунд (5 минут)
+    await redis_client.set(redis_key, json.dumps(notes_list), ex=300)
 
     return {"notes": notes_list}
