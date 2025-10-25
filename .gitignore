@@ -1,6 +1,6 @@
 .env
-venv
+pyproject.toml
+.venv
 alembic
 migrations
-src/auth/tokens
 task.md
